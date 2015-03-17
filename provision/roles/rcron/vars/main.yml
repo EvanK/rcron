@@ -1,0 +1,3 @@
+---
+# off since ppa doesn't currently have snmp support
+keepalived_snmp: Off

@@ -1,0 +1,10 @@
+# An arbitrary name
+cluster_name    = myredundant_jobs
+# A file containing either the word "active" or the word "passive"
+state_file      = /var/run/rcron.state
+# The default state in case state_file can't be read
+default_state   = passive
+syslog_facility = LOG_CRON
+syslog_level    = LOG_INFO
+# We can tune jobs niceness/priorities (see nice(1)).
+nice_level      = 19

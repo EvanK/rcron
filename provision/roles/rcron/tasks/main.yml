@@ -1,0 +1,82 @@
+---
+- name: "Install rcron"
+  copy: >
+    src=../../../../src/rcron.py
+    dest=/bin/rcron
+    owner=root
+    group=root
+    mode=0755
+
+- name: "Make rcron etc directory"
+  file: >
+    path=/etc/rcron
+    owner=root
+    group=root
+    state=directory
+
+- name: "Create rcron config"
+  copy: >
+    src=../../../../etc/rcron.conf.example
+    dest=/etc/rcron/rcron.conf
+    owner=root
+    group=root
+    mode=0644
+
+- name: "Install rcron init script"
+  copy: >
+    src=../../../../etc/debian.initd.sh
+    dest=/etc/init.d/rcron
+    owner=root
+    group=root
+    mode=0755
+  notify: restart rcron
+
+- name: "Add keepalived stable ppa"
+  apt_repository: repo='ppa:keepalived/stable'
+
+- name: "Pin ppa keepalived package"
+  copy: >
+    content="Package: keepalived\nPin: release o=LP-PPA-keepalived-stable\nPin-Priority: 900\n"
+    dest=/etc/apt/preferences.d/keepalived-stable-900
+    owner=root
+    group=root
+    mode=0644
+
+- name: "Install keepalived with unicast support"
+  apt: >
+    name=keepalived
+    state=latest
+    update_cache=yes
+
+- name: "Ensure DAEMON_ARGS defined in keepalived init.d"
+  lineinfile: >
+    dest=/etc/init.d/keepalived
+    regexp='^DAEMON_ARGS='
+    line="DAEMON_ARGS=\"{{ '-x' if keepalived_snmp else '' }}\""
+    insertafter='^CONFIG='
+
+- name: "Ensure $DAEMON_ARGS used in keepalived init.d start/restart"
+  replace: >
+    dest=/etc/init.d/keepalived
+    regexp='(start-stop-daemon(?:.*?\n?.*?)--start(?:.*?\n?.*?)--exec \$DAEMON);'
+    replace='\1 -- $DAEMON_ARGS;'
+
+- name: "Create keepalived config"
+  template: >
+    src=keepalived.conf.j2
+    dest=/etc/keepalived/keepalived.conf
+    owner=root
+    group=root
+    mode=0644
+  notify: restart keepalived
+
+- name: "Log every reboot (through rcron)"
+  cron: >
+    name="rcron reboot"
+    job="/bin/rcron echo Ran at $(date) >> /tmp/rcron.log"
+
+- name: "Run every minute (through rcron)"
+  cron: >
+    name="rcron minutely"
+    special_time=reboot
+    job="/bin/rcron echo Rebooted at $(date) >> /tmp/rcron.log"

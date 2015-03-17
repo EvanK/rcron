@@ -1,0 +1,40 @@
+vrrp_instance VI_1 {
+    # start all in BACKUP state
+    state BACKUP
+
+    # listen on internal/private network
+    interface eth1
+
+    # must be same for all nodes
+    virtual_router_id 31
+
+{% for host in groups['all'] %}{% if host == inventory_hostname %}
+    # must be *different* for all nodes, for master election purposes
+    priority {{ 100 - loop.index0 }}
+{% endif %}{% endfor %}
+
+    # heartbeat every second
+    advert_int 1
+
+    # this node
+    unicast_src_ip {{ inventory_hostname }}
+
+    # sibling nodes
+    unicast_peer {
+{% for host in groups['all'] %}{% if host != inventory_hostname %}
+        {{ host }}
+{% endif %}{% endfor %}
+    }
+
+    # must be same for all nodes
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+
+    # track state
+    notify_backup "/bin/echo passive > /var/run/rcron.state"
+    notify_master "/bin/echo active > /var/run/rcron.state"
+    notify_fault  "/bin/echo passive > /var/run/rcron.state"
+    notify_stop   "/bin/echo passive > /var/run/rcron.state"
+}
