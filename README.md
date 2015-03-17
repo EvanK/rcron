@@ -1,3 +1,6 @@
+[![Github Version](https://badge.fury.io/gh/EvanK%2Frcron.svg)](http://badge.fury.io/gh/EvanK%2Frcron)
+[![Build Status](https://travis-ci.org/EvanK/rcron.svg?branch=master)](https://travis-ci.org/EvanK/rcron)
+
 # Rcron
 
 Cron job redundancy and failover for a group of machines.
